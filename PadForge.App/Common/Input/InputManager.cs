@@ -1115,6 +1115,13 @@ namespace PadForge.Common.Input
                 catch { }
                 Engine.SdlDiagLog.Install();
 
+                // The OpenXInput fork must be the xinput1_4.dll SDL gets.
+                // GameInput loads Microsoft's copy during SDL_Init, and SDL
+                // loads XInput by name after it, so on a PC with the
+                // GameInput redistributable SDL would read the unfiltered
+                // copy and give PadForge's own virtual pads a slot.
+                Engine.SdlDiagLog.WriteLine(Engine.OpenXInputLoader.EnsureForkFirst());
+
                 // SDL3: SDL_Init returns bool (true = success), and
                 // SDL_INIT_GAMECONTROLLER is renamed to SDL_INIT_GAMEPAD.
                 // Keyboards and mice do not need SDL_INIT_VIDEO: RawInputListener enumerates and reads both.
