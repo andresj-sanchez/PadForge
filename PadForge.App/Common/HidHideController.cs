@@ -2302,10 +2302,44 @@ namespace PadForge.Common
         /// channel suffix (BTHENUM\{...}_VID&amp;0002054C_PID&amp;0CE6\9&amp;1479B2EE&amp;0&amp;0C27565874D8_C00000000),
         /// and the device node names it after DEV_ and again after
         /// BLUETOOTHDEVICE_ (BTHENUM\DEV_0C27565874D8\9&amp;1479B2EE&amp;0&amp;BLUETOOTHDEVICE_0C27565874D8).
+        ///
+        /// <para>Bluetooth LE pads (an Xbox Series pad on Bluetooth) enumerate
+        /// under BTHLE and BTHLEDEVICE instead, and carry the address in two
+        /// shapes of their own: the device node as BTHLE\DEV_AC8EBD4A5666\...,
+        /// and the GATT service node as the last token of its second segment
+        /// (BTHLEDEVICE\{00001812-...}_DEV_VID&amp;02045E_PID&amp;0B13_REV&amp;0523_AC8EBD4A5666\8&amp;BE735A1&amp;1&amp;0016).
+        /// The HID node under that service has no address of its own that
+        /// this needs; ReadInstanceSerial's parent walk reaches both. Without
+        /// these, two identical BLE pads read no serial, and the twin rule
+        /// hides neither.</para>
+        ///
         /// An all-zero address is no address.</summary>
         internal static string ParseBluetoothAddressSegment(string instanceId)
         {
             if (string.IsNullOrEmpty(instanceId)) return null;
+
+            // BTHLE\DEV_<mac>\...: the Bluetooth LE device node.
+            const string bleDevPrefix = @"BTHLE\DEV_";
+            if (instanceId.StartsWith(bleDevPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                if (instanceId.Length < bleDevPrefix.Length + 12) return null;
+                string token = instanceId.Substring(bleDevPrefix.Length, 12);
+                return IsBluetoothAddressToken(token) ? token : null;
+            }
+
+            // BTHLEDEVICE\{service}_DEV_VID&...._PID&...._REV&...._<mac>\...:
+            // the address is the last '_' token of the second segment.
+            const string bleServicePrefix = @"BTHLEDEVICE\";
+            if (instanceId.StartsWith(bleServicePrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                int start = bleServicePrefix.Length;
+                int end = instanceId.IndexOf('\\', start);
+                string segment = end < 0 ? instanceId.Substring(start) : instanceId.Substring(start, end - start);
+                int underscore = segment.LastIndexOf('_');
+                string token = underscore >= 0 ? segment.Substring(underscore + 1) : null;
+                return IsBluetoothAddressToken(token) ? token : null;
+            }
+
             if (!instanceId.StartsWith(@"BTHENUM\", StringComparison.OrdinalIgnoreCase)) return null;
 
             int slash = instanceId.LastIndexOf('\\');

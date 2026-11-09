@@ -349,6 +349,19 @@ namespace PadForge.Tests
             Assert.Null(HidHideController.ParseBluetoothAddressSegment(@"USB\VID_054C&PID_0CE6\0C27565874D8"));
             Assert.Null(HidHideController.ParseBluetoothAddressSegment(null));
 
+            // Bluetooth LE (an Xbox Series pad): the device node and the
+            // GATT service node carry the address; the HID node does not
+            // need to, the parent walk reaches both.
+            Assert.Equal("AC8EBD4A5666", HidHideController.ParseBluetoothAddressSegment(
+                @"BTHLE\DEV_AC8EBD4A5666\7&72B4501&0&AC8EBD4A5666"));
+            Assert.Equal("AC8EBD4A5666", HidHideController.ParseBluetoothAddressSegment(
+                @"BTHLEDEVICE\{00001812-0000-1000-8000-00805F9B34FB}_DEV_VID&02045E_PID&0B13_REV&0523_AC8EBD4A5666\8&BE735A1&1&0016"));
+            Assert.Null(HidHideController.ParseBluetoothAddressSegment(
+                @"BTHLEDEVICE\{00001812-0000-1000-8000-00805F9B34FB}_DEV_VID&02045E_PID&0B13_REV&0523_000000000000\8&BE735A1&1&0016"));
+            Assert.Null(HidHideController.ParseBluetoothAddressSegment(@"BTHLE\DEV_AC8E"));
+            Assert.Null(HidHideController.ParseBluetoothAddressSegment(
+                @"HID\{00001812-0000-1000-8000-00805F9B34FB}&DEV&VID_045E&PID_0B13&REV_0523&AC8EBD4A5666&IG_00\9&16B4AB9C&0&0000"));
+
             // The seam stands in for cfgmgr32 and hid.dll.
             HidHideController.SerialReader = _ => "112233445566";
             try
