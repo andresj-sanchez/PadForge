@@ -155,28 +155,13 @@ namespace PadForge.Common.Input
             return (instanceId == null ? 0 : WalkForAddress(instanceId), true);
         }
 
-        /// <summary>The interface OpenXInput serves an XInput slot from. Its
-        /// identity call does no enumeration or device I/O and answers
-        /// ERROR_BUSY instead of waiting on its lock (OpenXinput.h:476-478).
-        /// Microsoft's xinput1_4.dll has no such export, which is final.</summary>
+        /// <summary>The interface OpenXInput serves an XInput slot from
+        /// (<see cref="PadForge.Engine.XInputSlotIdentity.InterfacePath"/>,
+        /// shared with the XInput serial lookup).</summary>
         private static (string Path, bool Final) XInputInterface(uint slot)
         {
-            try
-            {
-                var identity = new OpenXInputIdentity { cbSize = (uint)Marshal.SizeOf<OpenXInputIdentity>() };
-                var buffer = new char[512];
-                uint rc = OpenXInputGetDeviceIdentityV1(slot, ref identity, buffer, (uint)buffer.Length);
-                if (rc == ERROR_INSUFFICIENT_BUFFER && identity.requiredCch > buffer.Length && identity.requiredCch <= 32768)
-                {
-                    buffer = new char[identity.requiredCch];
-                    rc = OpenXInputGetDeviceIdentityV1(slot, ref identity, buffer, (uint)buffer.Length);
-                }
-                if (rc == ERROR_SUCCESS && identity.requiredCch > 1 && identity.requiredCch <= buffer.Length)
-                    return (new string(buffer, 0, (int)identity.requiredCch - 1), true);
-                return (null, rc == ERROR_NOT_SUPPORTED);
-            }
-            catch (EntryPointNotFoundException) { return (null, true); }
-            catch (DllNotFoundException) { return (null, true); }
+            string path = PadForge.Engine.XInputSlotIdentity.InterfacePath(slot, out bool final);
+            return (path, path != null || final);
         }
 
         /// <summary>The device instance an interface belongs to, as Windows
@@ -301,22 +286,6 @@ namespace PadForge.Common.Input
 
         // ── Native ──
 
-        /// <summary>OPENXINPUT_DEVICE_IDENTITY_V1 (OpenXinput.h:463-470): 24
-        /// bytes, generation at offset 8.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct OpenXInputIdentity
-        {
-            public uint cbSize;
-            public uint requiredCch;
-            public ulong generation;
-            public uint interfaceIndex;
-            public uint interfaceCount;
-        }
-
-        [DllImport("xinput1_4.dll", EntryPoint = "OpenXInputGetDeviceIdentityV1", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        private static extern uint OpenXInputGetDeviceIdentityV1(uint userIndex, ref OpenXInputIdentity identity,
-            [Out] char[] path, uint capacityCch);
-
         [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
         private static extern int CM_Locate_DevNodeW(
             out uint pdnDevInst, [MarshalAs(UnmanagedType.LPWStr)] string pDeviceID, uint ulFlags);
@@ -353,8 +322,5 @@ namespace PadForge.Common.Input
 
         private const int CR_SUCCESS = 0;
         private const uint DEVPROP_TYPE_STRING = 0x00000012;
-        private const uint ERROR_SUCCESS = 0;
-        private const uint ERROR_NOT_SUPPORTED = 50;
-        private const uint ERROR_INSUFFICIENT_BUFFER = 122;
     }
 }

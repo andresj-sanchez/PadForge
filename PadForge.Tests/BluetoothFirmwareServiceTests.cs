@@ -51,9 +51,9 @@ namespace PadForge.Tests
         [Fact]
         public void IdentityStruct_MatchesOpenXInputsLayout()
         {
-            Assert.Equal(24, Marshal.SizeOf<BluetoothFirmwareService.OpenXInputIdentity>());
-            Assert.Equal(8, (int)Marshal.OffsetOf<BluetoothFirmwareService.OpenXInputIdentity>(
-                nameof(BluetoothFirmwareService.OpenXInputIdentity.generation)));
+            Assert.Equal(24, Marshal.SizeOf<PadForge.Engine.XInputSlotIdentity.OpenXInputIdentity>());
+            Assert.Equal(8, (int)Marshal.OffsetOf<PadForge.Engine.XInputSlotIdentity.OpenXInputIdentity>(
+                nameof(PadForge.Engine.XInputSlotIdentity.OpenXInputIdentity.generation)));
         }
 
         /// <summary>An XInput slot's interface is checked against the joystick
