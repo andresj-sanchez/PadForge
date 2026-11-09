@@ -743,11 +743,15 @@ namespace PadForge.Tests
         /// the vendor gate, Corsair's behind a fence of its own too. MSI's and
         /// Corsair's each have two calls: PadForge's own copy by name, then a
         /// copy in the vendor's folder by path, both after the gate. The two
-        /// VR runtimes ask theirs (VrRuntimeOffLimitsTests).</summary>
+        /// VR runtimes ask theirs (VrRuntimeOffLimitsTests). PadForge's own
+        /// OpenXInput fork is loaded once, right before SDL_Init, which the
+        /// test host never reaches (InputManager refuses to start the device
+        /// layer there first).</summary>
         [Fact]
         public void EveryLibraryLoadedByPath_IsOnTheList()
             => Assert.Equal(Map(
                 ("PadForge.App/Common/Input/OpenVrConsumerService.cs", 1),
+                ("PadForge.Engine/Common/OpenXInputLoader.cs", 1),
                 (LogiLed, 1),
                 (GKeys, 1),
                 (LgsLcd, 1),
