@@ -469,6 +469,20 @@ namespace PadForge.Engine
             SdlDevicePath = SDL_GetJoystickPath(Joystick);
             DevicePath = SdlDevicePath;
             SerialNumber = SDL_GetJoystickSerial(Joystick) ?? string.Empty;
+            // SDL's XInput driver gives no serial. For a Bluetooth LE pad,
+            // OpenXInput names the interface behind the slot, and that
+            // interface names the pad's address: the serial that keeps the
+            // pad's identity off the slot number and lets HidHide's sweep
+            // tell two pads of one model apart.
+            if (SerialNumber.Length == 0)
+            {
+                string address = XInputSlotIdentity.TryGetBluetoothAddress(SdlDevicePath, VendorId, ProductId);
+                if (address != null)
+                {
+                    SerialNumber = address;
+                    SdlDiagLog.WriteLine($"XINPUT {SdlDevicePath} {VendorId:X4}:{ProductId:X4} serial from OpenXInput identity: {address}");
+                }
+            }
             SdlGuid = GetJoystickGUIDString(Joystick);
 
             uint props = SDL_GetJoystickProperties(Joystick);
